@@ -1,7 +1,7 @@
 # ESP32HomeAutomation-RuleBased
 ESP32 home automation powered by a fluent rule engine. Declarative rules for socket control based on time, light levels, phone presence, and solar production. Built with a clean DSL that reads like English.
 
-**A typical day:**  
+##A typical day:    
 Wake up if not enough light, turn on an extra light, just for the period till you go to work.  
 At daytime, too much solar power?  Then you turn on a heater (or cooler).  
 At some lux level, you turn on the main light, and at 6, the TV backlight flips on.  
