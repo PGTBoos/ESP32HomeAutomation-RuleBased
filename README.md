@@ -11,8 +11,8 @@ At some lux level, you turn on the main light, and at 6, the TV backlight flips 
 Between 23:00 / 24:00, randomly turn off a main light (or only when you're not at home).  
 But you're still watching TV, so the backlight turns off only if all other lights are off.  
 Or do you want sun up, sun down? This code has your back.  
-As it contains location-based sun up / down triggers.
-And yes, it is NTP time synced, handling winter and summer time fine.
+As it contains location-based sun up / down triggers.  
+And yes, it is NTP time synced, handling winter and summer time fine.  
 Some actions keep a switch for a duration under control.  
 While others allow for manual changes (or delayed actions).    
 
