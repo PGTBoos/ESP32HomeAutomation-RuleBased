@@ -506,7 +506,13 @@ Removes all registered rules.
 
 ---
 
-## Example Usage
+## Example Usage 
+This repo is based on a state machine to control all devices.
+Similar to continuous flow coding as in a PLC.
+Although the rule system has its own logic, which I show below.
+And it can be easily extended to include a lot of rules.
+Without conflicting with the main state machine loop code.
+
 
 ```cpp
 void setup() {
