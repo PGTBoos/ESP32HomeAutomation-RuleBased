@@ -13,9 +13,6 @@ And yes, it is NTP time synced, handling winter and summer time fine.
 Some actions keep a switch for a duration under control.  
 While others allow for manual changes (or delayed actions).    
 
-(there will be added more readme's later (how to setup the hardware).
-
-> Oh did i forget to mention? it hosts a small web page too.
 
 
 | Overview | Schematic |
