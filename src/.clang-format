@@ -1,0 +1,15 @@
+Language: Cpp
+BreakBeforeBraces: Attach
+
+BraceWrapping:
+  AfterControlStatement: true  # Braces for if, else, for, etc. on same line
+  AfterFunction: true        # Braces for functions on same line
+  BeforeCatch: true
+  BeforeElse: true
+
+# Other common settings you might want:
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+AllowShortFunctionsOnASingleLine: All
+ColumnLimit: 0

@@ -1,0 +1,194 @@
+<!doctypehtml>
+    <title>Home Energy Dashboard</title>
+    <meta content="width=device-width,initial-scale=1" name=viewport>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px
+        }
+
+        .card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .1)
+        }
+
+        .switch-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center
+        }
+
+        .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2196f3
+        }
+
+        .label {
+            color: #666
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: #fff;
+            transition: .4s;
+            border-radius: 50%
+        }
+
+        input:checked+.toggle-slider {
+            background-color: #2196f3
+        }
+
+        input:checked+.toggle-slider:before {
+            transform: translateX(26px)
+        }
+
+        .status {
+            font-size: 14px;
+            color: #666
+        }
+
+        .details {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px
+        }
+
+        .status-icon {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px
+        }
+
+        .status-on {
+            background-color: #4caf50
+        }
+
+        .status-off {
+            background-color: #ccc
+        }
+
+        .time-info {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, .9);
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #666;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .1)
+        }
+
+        .update-recent {
+            color: #4caf50
+        }
+
+        .update-old {
+            color: #f44336
+        }
+    </style>
+    <div class=card>
+        <h2>Power Monitor</h2>
+        <div class=grid>
+            <div>
+                <div class=label>Import</div>
+                <div class=value id=import-power>-- W</div>
+            </div>
+            <div>
+                <div class=label>Export</div>
+                <div class=value id=export-power>-- W</div>
+            </div>
+        </div>
+    </div>
+    <div class=card>
+        <h2>Environment</h2>
+        <div class=grid>
+            <div>
+                <div class=label>Temperature</div>
+                <div class=value id=temperature>--°C</div>
+            </div>
+            <div>
+                <div class=label>Humidity</div>
+                <div class=value id=humidity>--%</div>
+            </div>
+            <div>
+                <div class=label>Light</div>
+                <div class=value id=light>-- lux</div>
+            </div>
+        </div>
+    </div>
+    <div class="card switch-card">
+        <div>
+            <h3><span class="status-icon status-off"></span>Switch 1 (Solar Excess)</h3>
+            <div class=status id=switch1-status>Off</div>
+            <div class=details>Auto: Power export > 500W</div>
+        </div><label class=toggle-switch><input id=switch1 onchange=toggleSwitch(1,this.checked) type=checkbox> <span
+                class=toggle-slider></span></label>
+    </div>
+    <div class="card switch-card">
+        <div>
+            <h3><span class="status-icon status-off"></span>Switch 2 (Evening Light)</h3>
+            <div class=status id=switch2-status>Off</div>
+            <div class=details>Auto: Light &lt; 75 lux (After 17:45)</div>
+            <div class=details id=switch2-offtime>Today's off time: --:--</div>
+        </div><label class=toggle-switch><input id=switch2 onchange=toggleSwitch(2,this.checked) type=checkbox> <span
+                class=toggle-slider></span></label>
+    </div>
+    <div class="card switch-card">
+        <div>
+            <h3><span class="status-icon status-off"></span>Switch 3 (Evening Light)</h3>
+            <div class=status id=switch3-status>Off</div>
+            <div class=details>Auto: Light &lt; 50 lux (After 17:30)</div>
+            <div class=details id=switch3-offtime>Today's off time: --:--</div>
+        </div><label class=toggle-switch><input id=switch3 onchange=toggleSwitch(3,this.checked) type=checkbox> <span
+                class=toggle-slider></span></label>
+    </div>
+    <div class=time-info>
+        <div>Current Time: <span id=current-time>--:--:--</span></div>
+        <div>Last Update: <span class=update-recent id=last-update>--:--:--</span></div>
+    </div>
+    <script>let a = null; function b(c, d) { fetch(`/switch/${c}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: d }) }).then(e => e.json()).then(e => { f(c, d) }).catch(e => { console.error('Error:', e); document.getElementById(`switch${c}`).checked = !d }) } function f(c, d) { const e = document.querySelector(`#switch${c}-status`).previousElementSibling.querySelector('.status-icon'); e.className = 'status-icon ' + (d ? 'status-on' : 'status-off') } function g(c) { if (c === 0) return "Off"; const d = Math.floor(c / 3600); const e = Math.floor((c % 3600) / 60); return `On for ${d}h ${e}m` } function h() { const c = new Date(); document.getElementById('current-time').textContent = c.toLocaleTimeString(); if (a) { const d = document.getElementById('last-update'); const e = c - a; d.textContent = a.toLocaleTimeString(); d.className = e > 5000 ? 'update-old' : 'update-recent' } } function i() { fetch('/data').then(c => c.json()).then(c => { document.getElementById('import-power').textContent = `${c.import_power} W`; document.getElementById('export-power').textContent = `${c.export_power} W`; document.getElementById('temperature').textContent = `${c.temperature}°C`; document.getElementById('humidity').textContent = `${c.humidity}%`; document.getElementById('light').textContent = `${c.light} lux`; c.switches.forEach((d, e) => { const j = e + 1; const k = document.getElementById(`switch${j}`); const l = document.getElementById(`switch${j}-status`); k.checked = d.state; l.textContent = g(d.duration); f(j, d.state); if (j > 1 && d.off_time) { document.getElementById(`switch${j}-offtime`).textContent = `Today's off time: ${d.off_time}` } }); a = new Date(); h() }).catch(c => { console.error('Error:', c); document.getElementById('last-update').className = 'update-old' }) } setInterval(h, 1000); setInterval(i, 2000); i();</script>
