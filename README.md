@@ -1,7 +1,8 @@
 # ESP32HomeAutomation-RuleBased
 ESP32 home automation powered by a fluent rule engine. Declarative rules for socket control based on time, light levels, phone presence, and solar production. Built with a clean DSL that reads like English. For about 30 Euro (or less, thanks to [uncle Ali](https://nl.aliexpress.com/item/1005005520419040.html?spm=a2g0o.productlist.main.34.35f05K9b5K9bFv&algo_pvid=1fe82635-a72e-4060-8650-93a687c4832c&algo_exp_id=1fe82635-a72e-4060-8650-93a687c4832c-33&pdp_ext_f=%7B%22order%22%3A%2214%22%2C%22eval%22%3A%221%22%2C%22fromPage%22%3A%22search%22%7D&pdp_npi=6%40dis%21EUR%214.42%213.54%21%21%215.07%214.06%21%402103890117658255801394317e47b6%2112000033397389571%21sea%21NL%21929538575%21X%211%210%21n_tag%3A-29919%3Bd%3A2d2b1a90%3Bm03_new_user%3A-29895&curPageLogUid=mWPBu79V3ewX&utparam-url=scene%3Asearch%7Cquery_from%3A%7Cx_object_id%3A1005005520419040%7C_p_origin_prod%3A) )
-
-![split your breadboards its esp32 time](https://github.com/PGTBoos/ESP32HomeAutomation-RuleBased/blob/main/IMG_esp32home.jpg)
+| | |
+|--|--|
+| ![split your breadboards its esp32 time](https://github.com/PGTBoos/ESP32HomeAutomation-RuleBased/blob/main/IMG_esp32home.jpg) | ![schematic](https://github.com/PGTBoos/ESP32HomeAutomation-RuleBased/blob/main/wiring.svg) |
 
 
 ### A typical day:    
