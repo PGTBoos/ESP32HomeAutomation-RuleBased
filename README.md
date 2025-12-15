@@ -1,14 +1,14 @@
 # ESP32HomeAutomation-RuleBased
 ESP32 home automation powered by a fluent rule engine. Declarative rules for socket control based on time, light levels, phone presence, and solar production. Built with a clean DSL that reads like English.
 
-**A typical day:**
+**A typical day:**  
 Wake up if not enough light, turn on an extra light, just for the period till you go to work.  
 At daytime, too much solar power?  Then you turn on a heater (or cooler).  
 At some lux level, you turn on the main light, and at 6, the TV backlight flips on.  
-Between 23:00 / 24:00, randomly turn off a main light (or only when you're not at home).
-But you're still watching a movie, so the TV backlight turns off only if all other lights are off.
-Or do you want sun up, sun down? This code has your back, as it contains location-based sun up / down triggers.
-Some actions keep a switch for a duration under control, while others allow for manual changes (or delayed actions).
+Between 23:00 / 24:00, randomly turn off a main light (or only when you're not at home).  
+But you're still watching a movie, so the TV backlight turns off only if all other lights are off.  
+Or do you want sun up, sun down? This code has your back, as it contains location-based sun up / down triggers.  
+Some actions keep a switch for a duration under control, while others allow for manual changes (or delayed actions).  
 
 
 
