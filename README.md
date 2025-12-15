@@ -549,5 +549,13 @@ void setupRules() {
 | BH1750 | Light sensor | Optional |
 | BME280 | Temperature/Humidity/Pressure | Optional |
 | P1 Meter | Power monitoring (Dutch smart meter) | Optional |
-| Phone on WiFi | Presence detection via ping | Optional |
+| OLED Display (SH1106 128x64)| Status display |
+| (also futering a basic website)| |
+| Phone on static ip WiFi | Presence detection via ping | Optional |
+
+Price estimate ~ 30 to 40 Euro's total.
+
+So far this code controls 4 home connect switches, but you can code more.
+
+
 
