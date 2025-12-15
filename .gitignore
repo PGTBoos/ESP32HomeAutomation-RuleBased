@@ -39,3 +39,19 @@
 
 # debug information files
 *.dwo
+
+
+
+# Secrets
+data/config.json
+
+# PlatformIO
+.pio/
+.vscode/
+.pioenvs/
+.piolibdeps/
+
+# Build
+build/
+*.bin
+
