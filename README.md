@@ -18,13 +18,14 @@ While others allow for manual changes (or delayed actions).
 
 (there will be added more readme's later (how to setup the hardware).
 
-
+> Oh did i forget to mention? it hosts a small web page too.
 
 
 # SmartRuleSystem Wiki
 
 A flexible rule-based automation system for ESP32 smart home control.  
 Rules evaluate conditions and time windows to control WiFi sockets automatically.
+
 
 ---
 
