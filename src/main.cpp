@@ -1,4 +1,5 @@
 #include "main.h"
+#include "PowerHistory.h"
 
 // Global variable definitions
 TimingControl timing;
@@ -229,7 +230,7 @@ void setupRules() {
              rs.onCondition(rs.allOf({rs.phonePresent(), rs.after("18:00"), rs.lightAbove(11)})));
 
   rs.addRule(4, "TV ambient off",
-             rs.offCondition(rs.lightBelow(5)));
+             rs.offConditionDelayed(rs.lightBelow(5), 120));
 }
 
 void setup() {
@@ -247,6 +248,9 @@ void setup() {
     Serial.println("Failed to mount SPIFFS");
     return;
   }
+
+  // intitalise power history
+  powerHistory.loadFromSpiffs();
 
   // Load configuration from SPIFFS
   if (!loadConfiguration()) {
@@ -559,13 +563,36 @@ void loop() {
         // Add your logic for when phone is absent
       }
       timing.lastPhoneCheck = currentMillis;
-      operationOrder = 100;
+      operationOrder = 95;
       yield();
       delay(50); // Give some time between network operations
     } else {
-      operationOrder = 100;
+      operationOrder = 95;
     }
     break;
+
+  case 95: // Power history updates
+  {
+    // Update minute data every minute
+    if (p1Meter && powerHistory.shouldUpdateMinute()) {
+      powerHistory.updateMinute(
+          p1Meter->getCurrentImport(),
+          p1Meter->getCurrentExport());
+    }
+
+    // Update hour data when hour changes
+    if (powerHistory.shouldUpdateHour()) {
+      powerHistory.resetHourAccumulator();
+    }
+
+    // Update day data at midnight
+    if (powerHistory.shouldUpdateDay()) {
+      powerHistory.resetDayAccumulator();
+    }
+
+    operationOrder = 100;
+    break;
+  }
 
   case 100: {
     if (!p1Meter) {
