@@ -1,194 +1,953 @@
-<!doctypehtml>
-    <title>Home Energy Dashboard</title>
-    <meta content="width=device-width,initial-scale=1" name=viewport>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Automation Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background: #f5f5f5
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
-        .grid {
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 300;
+            color: #fff;
+        }
+
+        .dashboard {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
         .card {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            background: #fff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, .1)
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .switch-card {
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-title h2 {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .card-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .power-icon {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+        }
+
+        .env-icon {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+        }
+
+        .switch-icon {
+            background: linear-gradient(135deg, #43e97b, #38f9d7);
+        }
+
+        .info-icon {
+            background: linear-gradient(135deg, #fa709a, #fee140);
+        }
+
+        .graph-icon {
+            background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+        }
+
+        /* Power Card */
+        .power-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .power-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+        }
+
+        .power-label {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .power-value {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .power-value.import {
+            color: #f5576c;
+        }
+
+        .power-value.export {
+            color: #43e97b;
+        }
+
+        .power-total {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             justify-content: space-between;
-            align-items: center
         }
 
-        .value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #2196f3
+        .total-item {
+            text-align: center;
         }
 
-        .label {
-            color: #666
-        }
-
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0
-        }
-
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px
-        }
-
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: #fff;
-            transition: .4s;
-            border-radius: 50%
-        }
-
-        input:checked+.toggle-slider {
-            background-color: #2196f3
-        }
-
-        input:checked+.toggle-slider:before {
-            transform: translateX(26px)
-        }
-
-        .status {
-            font-size: 14px;
-            color: #666
-        }
-
-        .details {
-            font-size: 12px;
+        .total-label {
+            font-size: 11px;
             color: #888;
-            margin-top: 5px
         }
 
-        .status-icon {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
+        .total-value {
+            font-size: 16px;
+        }
+
+        .total-value.negative {
+            color: #f5576c;
+        }
+
+        .total-value.positive {
+            color: #43e97b;
+        }
+
+        /* Environment Card */
+        .env-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .env-item {
+            text-align: center;
+            padding: 15px 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+        }
+
+        .env-icon-small {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .env-value {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .env-unit {
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .env-label {
+            font-size: 11px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        /* Switches Card */
+        .phone-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            margin-left: auto;
+        }
+
+        .phone-dot {
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            margin-right: 8px
         }
 
-        .status-on {
-            background-color: #4caf50
+        .phone-dot.online {
+            background: #43e97b;
+            box-shadow: 0 0 10px #43e97b;
         }
 
-        .status-off {
-            background-color: #ccc
+        .phone-dot.offline {
+            background: #666;
         }
 
-        .time-info {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(255, 255, 255, .9);
-            padding: 8px 15px;
-            border-radius: 4px;
-            font-size: 12px;
+        .switches-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .switch-item {
+            text-align: center;
+            padding: 10px 5px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .switch-item:hover {
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .switch-item.on {
+            background: rgba(67, 233, 123, 0.2);
+            border: 1px solid #43e97b;
+        }
+
+        .switch-item.offline {
+            opacity: 0.5;
+        }
+
+        .switch-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .switch-circle.on {
+            background: #43e97b;
+            color: #000;
+            box-shadow: 0 0 20px rgba(67, 233, 123, 0.5);
+        }
+
+        .switch-circle.off {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #666;
             color: #666;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, .1)
         }
 
-        .update-recent {
-            color: #4caf50
+        .switch-circle.offline {
+            background: transparent;
+            border: 2px dashed #666;
         }
 
-        .update-old {
-            color: #f44336
+        .switch-label {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .rule-info {
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            font-size: 13px;
+        }
+
+        .rule-name {
+            color: #4facfe;
+            margin-bottom: 4px;
+        }
+
+        .rule-time {
+            color: #888;
+            font-size: 12px;
+        }
+
+        /* Info Card */
+        .info-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .info-label {
+            color: #888;
+            font-size: 13px;
+        }
+
+        .info-value {
+            font-weight: 500;
+        }
+
+        .wifi-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .wifi-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #43e97b;
+        }
+
+        /* Graph Cards */
+        .graph-container {
+            position: relative;
+            height: 180px;
+            margin-bottom: 10px;
+        }
+
+        .graph-summary {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .graph-stat {
+            text-align: center;
+        }
+
+        .graph-stat-value {
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .graph-stat-value.import {
+            color: #f5576c;
+        }
+
+        .graph-stat-value.export {
+            color: #43e97b;
+        }
+
+        .graph-stat-value.net {
+            color: #4facfe;
+        }
+
+        .graph-stat-value.net.positive {
+            color: #43e97b;
+        }
+
+        .graph-stat-value.net.negative {
+            color: #f5576c;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .update-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .update-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #43e97b;
+            animation: pulse 2s infinite;
+        }
+
+        .update-dot.stale {
+            background: #f5576c;
+            animation: none;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
     </style>
-    <div class=card>
-        <h2>Power Monitor</h2>
-        <div class=grid>
-            <div>
-                <div class=label>Import</div>
-                <div class=value id=import-power>-- W</div>
+</head>
+
+<body>
+    <h1>🏠 Home Automation</h1>
+
+    <div class="dashboard">
+        <!-- Power Card -->
+        <div class="card">
+            <div class="card-title">
+                <div class="card-icon power-icon">⚡</div>
+                <h2>Power</h2>
             </div>
-            <div>
-                <div class=label>Export</div>
-                <div class=value id=export-power>-- W</div>
+            <div class="power-grid">
+                <div class="power-item">
+                    <div class="power-label">Import</div>
+                    <div class="power-value import" id="import-power">-- W</div>
+                </div>
+                <div class="power-item">
+                    <div class="power-label">Export</div>
+                    <div class="power-value export" id="export-power">-- W</div>
+                </div>
+            </div>
+            <div class="power-total">
+                <div class="total-item">
+                    <div class="total-label">Today Used</div>
+                    <div class="total-value negative" id="daily-import">-- kWh</div>
+                </div>
+                <div class="total-item">
+                    <div class="total-label">Today Produced</div>
+                    <div class="total-value positive" id="daily-export">-- kWh</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Environment Card -->
+        <div class="card">
+            <div class="card-title">
+                <div class="card-icon env-icon">🌡</div>
+                <h2>Environment</h2>
+            </div>
+            <div class="env-grid">
+                <div class="env-item">
+                    <div class="env-icon-small">🌡️</div>
+                    <div class="env-value" id="temperature">--</div>
+                    <div class="env-unit">°C</div>
+                    <div class="env-label">Temperature</div>
+                </div>
+                <div class="env-item">
+                    <div class="env-icon-small">💧</div>
+                    <div class="env-value" id="humidity">--</div>
+                    <div class="env-unit">%</div>
+                    <div class="env-label">Humidity</div>
+                </div>
+                <div class="env-item">
+                    <div class="env-icon-small">☀️</div>
+                    <div class="env-value" id="light">--</div>
+                    <div class="env-unit">lux</div>
+                    <div class="env-label">Light</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Switches Card -->
+        <div class="card">
+            <div class="card-title">
+                <div class="card-icon switch-icon">🔌</div>
+                <h2>Switches</h2>
+                <div class="phone-status">
+                    <div class="phone-dot" id="phone-dot"></div>
+                    <span id="phone-text">Phone</span>
+                </div>
+            </div>
+            <div class="switches-grid" id="switches-grid"></div>
+            <div class="rule-info">
+                <div class="rule-name" id="rule-name">--</div>
+                <div class="rule-time" id="rule-time">--</div>
+            </div>
+        </div>
+
+        <!-- System Info Card -->
+        <div class="card">
+            <div class="card-title">
+                <div class="card-icon info-icon">ℹ️</div>
+                <h2>System Info</h2>
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Time</span>
+                    <span class="info-value" id="current-time">--:--:--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">WiFi</span>
+                    <span class="info-value wifi-status">
+                        <span class="wifi-dot"></span>
+                        <span id="ip-address">---.---.---.---</span>
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Free RAM</span>
+                    <span class="info-value" id="free-ram">-- KB</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Uptime</span>
+                    <span class="info-value" id="uptime">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 60 Minutes Graph -->
+        <div class="card">
+            <div class="card-title">
+                <div class="card-icon graph-icon">📊</div>
+                <h2>Last 60 Minutes</h2>
+            </div>
+            <div class="graph-container">
+                <canvas id="minuteChart"></canvas>
+            </div>
+            <div class="graph-summary">
+                <div class="graph-stat">
+                    <div>Avg Import</div>
+                    <div class="graph-stat-value import" id="minute-avg-import">-- W</div>
+                </div>
+                <div class="graph-stat">
+                    <div>Avg Export</div>
+                    <div class="graph-stat-value export" id="minute-avg-export">-- W</div>
+                </div>
+                <div class="graph-stat">
+                    <div>Net</div>
+                    <div class="graph-stat-value net" id="minute-net">-- W</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 24 Hours Graph -->
+        <div class="card">
+            <div class="card-title">
+                <div class="card-icon graph-icon">📊</div>
+                <h2>Last 24 Hours</h2>
+            </div>
+            <div class="graph-container">
+                <canvas id="hourChart"></canvas>
+            </div>
+            <div class="graph-summary">
+                <div class="graph-stat">
+                    <div>Total Import</div>
+                    <div class="graph-stat-value import" id="hour-total-import">-- Wh</div>
+                </div>
+                <div class="graph-stat">
+                    <div>Total Export</div>
+                    <div class="graph-stat-value export" id="hour-total-export">-- Wh</div>
+                </div>
+                <div class="graph-stat">
+                    <div>Net</div>
+                    <div class="graph-stat-value net" id="hour-net">-- Wh</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7 Days Graph -->
+        <div class="card">
+            <div class="card-title">
+                <div class="card-icon graph-icon">📊</div>
+                <h2>Last 7 Days</h2>
+            </div>
+            <div class="graph-container">
+                <canvas id="dayChart"></canvas>
+            </div>
+            <div class="graph-summary">
+                <div class="graph-stat">
+                    <div>Total Import</div>
+                    <div class="graph-stat-value import" id="day-total-import">-- kWh</div>
+                </div>
+                <div class="graph-stat">
+                    <div>Total Export</div>
+                    <div class="graph-stat-value export" id="day-total-export">-- kWh</div>
+                </div>
+                <div class="graph-stat">
+                    <div>Net</div>
+                    <div class="graph-stat-value net" id="day-net">-- kWh</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 30 Days Graph -->
+        <div class="card">
+            <div class="card-title">
+                <div class="card-icon graph-icon">📊</div>
+                <h2>Last 30 Days</h2>
+            </div>
+            <div class="graph-container">
+                <canvas id="monthChart"></canvas>
+            </div>
+            <div class="graph-summary">
+                <div class="graph-stat">
+                    <div>Total Import</div>
+                    <div class="graph-stat-value import" id="month-total-import">-- kWh</div>
+                </div>
+                <div class="graph-stat">
+                    <div>Total Export</div>
+                    <div class="graph-stat-value export" id="month-total-export">-- kWh</div>
+                </div>
+                <div class="graph-stat">
+                    <div>Net</div>
+                    <div class="graph-stat-value net" id="month-net">-- kWh</div>
+                </div>
             </div>
         </div>
     </div>
-    <div class=card>
-        <h2>Environment</h2>
-        <div class=grid>
-            <div>
-                <div class=label>Temperature</div>
-                <div class=value id=temperature>--°C</div>
-            </div>
-            <div>
-                <div class=label>Humidity</div>
-                <div class=value id=humidity>--%</div>
-            </div>
-            <div>
-                <div class=label>Light</div>
-                <div class=value id=light>-- lux</div>
-            </div>
+
+    <div class="footer">
+        <div class="update-status">
+            <div class="update-dot" id="update-dot"></div>
+            <span>Last update: <span id="last-update">--:--:--</span></span>
         </div>
     </div>
-    <div class="card switch-card">
-        <div>
-            <h3><span class="status-icon status-off"></span>Switch 1 (Solar Excess)</h3>
-            <div class=status id=switch1-status>Off</div>
-            <div class=details>Auto: Power export > 500W</div>
-        </div><label class=toggle-switch><input id=switch1 onchange=toggleSwitch(1,this.checked) type=checkbox> <span
-                class=toggle-slider></span></label>
-    </div>
-    <div class="card switch-card">
-        <div>
-            <h3><span class="status-icon status-off"></span>Switch 2 (Evening Light)</h3>
-            <div class=status id=switch2-status>Off</div>
-            <div class=details>Auto: Light &lt; 75 lux (After 17:45)</div>
-            <div class=details id=switch2-offtime>Today's off time: --:--</div>
-        </div><label class=toggle-switch><input id=switch2 onchange=toggleSwitch(2,this.checked) type=checkbox> <span
-                class=toggle-slider></span></label>
-    </div>
-    <div class="card switch-card">
-        <div>
-            <h3><span class="status-icon status-off"></span>Switch 3 (Evening Light)</h3>
-            <div class=status id=switch3-status>Off</div>
-            <div class=details>Auto: Light &lt; 50 lux (After 17:30)</div>
-            <div class=details id=switch3-offtime>Today's off time: --:--</div>
-        </div><label class=toggle-switch><input id=switch3 onchange=toggleSwitch(3,this.checked) type=checkbox> <span
-                class=toggle-slider></span></label>
-    </div>
-    <div class=time-info>
-        <div>Current Time: <span id=current-time>--:--:--</span></div>
-        <div>Last Update: <span class=update-recent id=last-update>--:--:--</span></div>
-    </div>
-    <script>let a = null; function b(c, d) { fetch(`/switch/${c}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: d }) }).then(e => e.json()).then(e => { f(c, d) }).catch(e => { console.error('Error:', e); document.getElementById(`switch${c}`).checked = !d }) } function f(c, d) { const e = document.querySelector(`#switch${c}-status`).previousElementSibling.querySelector('.status-icon'); e.className = 'status-icon ' + (d ? 'status-on' : 'status-off') } function g(c) { if (c === 0) return "Off"; const d = Math.floor(c / 3600); const e = Math.floor((c % 3600) / 60); return `On for ${d}h ${e}m` } function h() { const c = new Date(); document.getElementById('current-time').textContent = c.toLocaleTimeString(); if (a) { const d = document.getElementById('last-update'); const e = c - a; d.textContent = a.toLocaleTimeString(); d.className = e > 5000 ? 'update-old' : 'update-recent' } } function i() { fetch('/data').then(c => c.json()).then(c => { document.getElementById('import-power').textContent = `${c.import_power} W`; document.getElementById('export-power').textContent = `${c.export_power} W`; document.getElementById('temperature').textContent = `${c.temperature}°C`; document.getElementById('humidity').textContent = `${c.humidity}%`; document.getElementById('light').textContent = `${c.light} lux`; c.switches.forEach((d, e) => { const j = e + 1; const k = document.getElementById(`switch${j}`); const l = document.getElementById(`switch${j}-status`); k.checked = d.state; l.textContent = g(d.duration); f(j, d.state); if (j > 1 && d.off_time) { document.getElementById(`switch${j}-offtime`).textContent = `Today's off time: ${d.off_time}` } }); a = new Date(); h() }).catch(c => { console.error('Error:', c); document.getElementById('last-update').className = 'update-old' }) } setInterval(h, 1000); setInterval(i, 2000); i();</script>
+
+    <script>
+        let lastUpdateTime = null;
+        const NUM_SOCKETS = 4;
+        let charts = {};
+
+        // Chart.js default config for mirrored bar charts
+        const chartConfig = {
+            type: 'bar',
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const value = Math.abs(context.raw);
+                                const label = context.raw >= 0 ? 'Import' : 'Export';
+                                return `${label}: ${value.toFixed(1)} ${context.dataset.unit || ''}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#888', maxTicksLimit: 10 }
+                    },
+                    y: {
+                        stacked: true,
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: {
+                            color: '#888',
+                            callback: function (value) {
+                                return Math.abs(value);
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        function createChart(canvasId, labels, importData, exportData, unit) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+
+            if (charts[canvasId]) {
+                charts[canvasId].destroy();
+            }
+
+            // Export as negative values for mirrored effect
+            const exportNegative = exportData.map(v => -v);
+
+            charts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Import',
+                            data: importData,
+                            backgroundColor: 'rgba(245, 87, 108, 0.8)',
+                            borderColor: 'rgba(245, 87, 108, 1)',
+                            borderWidth: 1,
+                            unit: unit
+                        },
+                        {
+                            label: 'Export',
+                            data: exportNegative,
+                            backgroundColor: 'rgba(67, 233, 123, 0.8)',
+                            borderColor: 'rgba(67, 233, 123, 1)',
+                            borderWidth: 1,
+                            unit: unit
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const value = Math.abs(context.raw);
+                                    const label = context.datasetIndex === 0 ? 'Import' : 'Export';
+                                    return `${label}: ${value.toFixed(1)} ${unit}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#888', maxTicksLimit: 10, font: { size: 10 } }
+                        },
+                        y: {
+                            stacked: true,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: {
+                                color: '#888',
+                                font: { size: 10 },
+                                callback: function (value) {
+                                    return Math.abs(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initSwitches() {
+            const grid = document.getElementById('switches-grid');
+            grid.innerHTML = '';
+            for (let i = 1; i <= NUM_SOCKETS; i++) {
+                const div = document.createElement('div');
+                div.className = 'switch-item';
+                div.id = `switch-${i}`;
+                div.innerHTML = `
+                    <div class="switch-circle off" id="switch-circle-${i}">${i}</div>
+                    <div class="switch-label">Socket ${i}</div>
+                `;
+                div.onclick = () => toggleSwitch(i);
+                grid.appendChild(div);
+            }
+        }
+
+        function toggleSwitch(num) {
+            const circle = document.getElementById(`switch-circle-${num}`);
+            const isOn = circle.classList.contains('on');
+
+            fetch(`/switch/${num}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ state: !isOn })
+            })
+                .then(r => r.json())
+                .then(() => fetchData())
+                .catch(e => console.error('Toggle error:', e));
+        }
+
+        function formatPower(watts) {
+            if (Math.abs(watts) >= 1000) {
+                return (watts / 1000).toFixed(2) + ' kW';
+            }
+            return Math.round(watts) + ' W';
+        }
+
+        function formatUptime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            if (h > 0) return `${h}h ${m}m`;
+            return `${m}m`;
+        }
+
+        function updateClock() {
+            document.getElementById('current-time').textContent =
+                new Date().toLocaleTimeString();
+
+            if (lastUpdateTime) {
+                const age = Date.now() - lastUpdateTime;
+                const dot = document.getElementById('update-dot');
+                dot.className = age > 5000 ? 'update-dot stale' : 'update-dot';
+            }
+        }
+
+        function updateNetClass(elementId, value) {
+            const el = document.getElementById(elementId);
+            el.className = 'graph-stat-value net ' + (value >= 0 ? 'negative' : 'positive');
+        }
+
+        function fetchData() {
+            fetch('/data')
+                .then(r => r.json())
+                .then(data => {
+                    // Power
+                    document.getElementById('import-power').textContent = formatPower(data.import_power);
+                    document.getElementById('export-power').textContent = formatPower(data.export_power);
+
+                    if (data.daily_import !== undefined) {
+                        document.getElementById('daily-import').textContent = '-' + data.daily_import.toFixed(1) + ' kWh';
+                        document.getElementById('daily-export').textContent = '+' + data.daily_export.toFixed(1) + ' kWh';
+                    }
+
+                    // Environment
+                    document.getElementById('temperature').textContent = data.temperature.toFixed(1);
+                    document.getElementById('humidity').textContent = Math.round(data.humidity);
+                    document.getElementById('light').textContent = Math.round(data.light);
+
+                    // Phone
+                    const phoneDot = document.getElementById('phone-dot');
+                    const phoneText = document.getElementById('phone-text');
+                    phoneDot.className = data.phone_present ? 'phone-dot online' : 'phone-dot offline';
+                    phoneText.textContent = data.phone_present ? 'Home' : 'Away';
+
+                    // Switches
+                    data.switches.forEach((sw, i) => {
+                        const num = i + 1;
+                        const item = document.getElementById(`switch-${num}`);
+                        const circle = document.getElementById(`switch-circle-${num}`);
+
+                        item.className = 'switch-item' + (sw.state ? ' on' : '') + (sw.online === false ? ' offline' : '');
+                        circle.className = 'switch-circle' + (sw.online === false ? ' offline' : (sw.state ? ' on' : ' off'));
+                        if (sw.online !== false) circle.textContent = num;
+                    });
+
+                    // Rule info
+                    if (data.last_rule) document.getElementById('rule-name').textContent = data.last_rule;
+                    if (data.last_rule_time) document.getElementById('rule-time').textContent = data.last_rule_time;
+
+                    // System info
+                    if (data.ip) document.getElementById('ip-address').textContent = data.ip;
+                    if (data.free_ram) document.getElementById('free-ram').textContent = data.free_ram + ' KB';
+                    if (data.uptime) document.getElementById('uptime').textContent = formatUptime(data.uptime);
+
+                    lastUpdateTime = Date.now();
+                    document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+                })
+                .catch(e => {
+                    console.error('Fetch error:', e);
+                    document.getElementById('update-dot').className = 'update-dot stale';
+                });
+        }
+
+        function fetchHistory() {
+            // Minute data
+            fetch('/history/minute')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.count > 0) {
+                        const labels = Array.from({ length: data.count }, (_, i) => `-${data.count - i}m`);
+                        createChart('minuteChart', labels, data.import, data.export, 'W');
+
+                        const avgImport = data.import.reduce((a, b) => a + b, 0) / data.count;
+                        const avgExport = data.export.reduce((a, b) => a + b, 0) / data.count;
+                        const net = avgImport - avgExport;
+
+                        document.getElementById('minute-avg-import').textContent = avgImport.toFixed(0) + ' W';
+                        document.getElementById('minute-avg-export').textContent = avgExport.toFixed(0) + ' W';
+                        document.getElementById('minute-net').textContent = (net >= 0 ? '+' : '') + net.toFixed(0) + ' W';
+                        updateNetClass('minute-net', net);
+                    }
+                });
+
+            // Hour data
+            fetch('/history/hour')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.count > 0) {
+                        const labels = Array.from({ length: data.count }, (_, i) => `-${data.count - i}h`);
+                        createChart('hourChart', labels, data.import, data.export, 'Wh');
+
+                        const totalImport = data.import.reduce((a, b) => a + b, 0);
+                        const totalExport = data.export.reduce((a, b) => a + b, 0);
+                        const net = totalImport - totalExport;
+
+                        document.getElementById('hour-total-import').textContent = totalImport.toFixed(0) + ' Wh';
+                        document.getElementById('hour-total-export').textContent = totalExport.toFixed(0) + ' Wh';
+                        document.getElementById('hour-net').textContent = (net >= 0 ? '+' : '') + net.toFixed(0) + ' Wh';
+                        updateNetClass('hour-net', net);
+                    }
+                });
+
+            // Day data
+            fetch('/history/day')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.count > 0) {
+                        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                        const today = new Date().getDay();
+                        const labels = Array.from({ length: data.count }, (_, i) => {
+                            const dayIndex = (today - data.count + i + 8) % 7;
+                            return days[dayIndex];
+                        });
+                        createChart('dayChart', labels, data.import, data.export, 'kWh');
+
+                        const totalImport = data.import.reduce((a, b) => a + b, 0);
+                        const totalExport = data.export.reduce((a, b) => a + b, 0);
+                        const net = totalImport - totalExport;
+
+                        document.getElementById('day-total-import').textContent = totalImport.toFixed(1) + ' kWh';
+                        document.getElementById('day-total-export').textContent = totalExport.toFixed(1) + ' kWh';
+                        document.getElementById('day-net').textContent = (net >= 0 ? '+' : '') + net.toFixed(1) + ' kWh';
+                        updateNetClass('day-net', net);
+                    }
+                });
+
+            // Month data
+            fetch('/history/month')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.count > 0) {
+                        const labels = Array.from({ length: data.count }, (_, i) => `-${data.count - i}d`);
+                        createChart('monthChart', labels, data.import, data.export, 'kWh');
+
+                        const totalImport = data.import.reduce((a, b) => a + b, 0);
+                        const totalExport = data.export.reduce((a, b) => a + b, 0);
+                        const net = totalImport - totalExport;
+
+                        document.getElementById('month-total-import').textContent = totalImport.toFixed(1) + ' kWh';
+                        document.getElementById('month-total-export').textContent = totalExport.toFixed(1) + ' kWh';
+                        document.getElementById('month-net').textContent = (net >= 0 ? '+' : '') + net.toFixed(1) + ' kWh';
+                        updateNetClass('month-net', net);
+                    }
+                });
+        }
+
+        // Initialize
+        initSwitches();
+        setInterval(updateClock, 1000);
+        setInterval(fetchData, 2000);
+        setInterval(fetchHistory, 60000); // Update graphs every minute
+        fetchData();
+        fetchHistory();
+    </script>
+</body>
+
+</html>
