@@ -19,8 +19,8 @@ While others allow for manual changes (or delayed actions).
 |--|--|
 | ![split your breadboards its esp32 time](https://github.com/PGTBoos/ESP32HomeAutomation-RuleBased/blob/main/IMG_esp32home.jpg) | ![schematic](https://github.com/PGTBoos/ESP32HomeAutomation-RuleBased/blob/main/wiring.svg) |
 
-
-
+How it looks from the website http(your ip addres):8080/index.html
+![webview](https://github.com/PGTBoos/ESP32HomeAutomation-RuleBased/blob/main/Screenshot-webinterface.png)
 
 # SmartRuleSystem Wiki
 
