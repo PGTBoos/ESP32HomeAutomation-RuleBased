@@ -20,11 +20,11 @@ private:
     int consecutiveFailures;
     String deviceIP; // Store IP for better logging
     bool makeHttpRequest(const String &endpoint, const String &method, const String &payload, String &response);
-
+    int socketNumber;
     unsigned long lastLogTime; // For controlling log frequency
 
 public:
-    HomeSocketDevice(const char *ip);
+    HomeSocketDevice(const char *ip, int socketNum);
     void readStateInfo();
     bool setState(bool state);
     bool getState();

@@ -25,9 +25,11 @@ private:
     bool lastReadSuccess;
     bool getPowerData(float &importPower, float &exportPower);
     bool makeRequest(const String &endpoint, const String &method, const String &payload = "");
+    int socketNumber;
 
 public:
     HomeP1Device(const char *ip);
+    HomeP1Device(const char *ip, int socketNum);
     void update();
     float getCurrentImport() const;
     float getCurrentExport() const;

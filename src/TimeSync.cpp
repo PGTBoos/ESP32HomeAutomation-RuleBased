@@ -202,22 +202,23 @@ bool TimeSync::isTimeBetween(const char *startTime, const char *endTime) {
   int endMinutes = endHour * 60 + endMin;
 
   // Debug time information
-  Serial.printf("Time check - Current: %02d:%02d (%d min), ", timeinfo.tm_hour,
-                timeinfo.tm_min, currentMinutes);
-  Serial.printf("Start: %02d:%02d (%d min), ", startHour, startMin,
-                startMinutes);
-  Serial.printf("End: %02d:%02d (%d min)\n", endHour, endMin, endMinutes);
+  // Serial.printf("Time check - Current: %02d:%02d (%d min), ", timeinfo.tm_hour,
+  //               timeinfo.tm_min, currentMinutes);
+  // Serial.printf("Start: %02d:%02d (%d min), ", startHour, startMin,
+  //               startMinutes);
+  // Serial.printf("End: %02d:%02d (%d min)\n", endHour, endMin, endMinutes);
 
   if (endMinutes < startMinutes) { // Handles overnight periods
     bool isInRange =
         currentMinutes >= startMinutes || currentMinutes <= endMinutes;
-    Serial.printf("Overnight period check: %s\n", isInRange ? "true" : "false");
+    // Serial.printf("Overnight period check: %s\n", isInRange ? "true" : "false");
+
     return isInRange;
   }
 
   bool isInRange =
       currentMinutes >= startMinutes && currentMinutes <= endMinutes;
-  Serial.printf("Same-day period check: %s\n", isInRange ? "true" : "false");
+  //  Serial.printf("Same-day period check: %s\n", isInRange ? "true" : "false");
   return isInRange;
 }
 

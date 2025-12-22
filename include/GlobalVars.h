@@ -27,6 +27,16 @@ extern DisplayManager display;
 extern TimeSync timeSync;
 extern NetworkCheck *phoneCheck;
 
+struct RuleHistoryEntry
+{
+    char name[32];
+    char time[12];
+};
+extern RuleHistoryEntry ruleHistory[4];
+extern int ruleHistoryIndex;
+
+void addRuleToHistory(const char *name, const char *time);
+
 // Config structure
 struct Config
 {
@@ -54,8 +64,8 @@ struct TimingControl
 {
     const unsigned long ENV_SENSOR_INTERVAL = 500;    // 10 seconds
     const unsigned long LIGHT_SENSOR_INTERVAL = 500;  // 10 seconds
-    const unsigned long DISPLAY_INTERVAL = 1500;      // 1 second
-    const unsigned long P1_INTERVAL = 1000;           // 1 second
+    const unsigned long DISPLAY_INTERVAL = 1500;      // 1.5 second
+    const unsigned long P1_INTERVAL = 30000;          // 30 second
     const unsigned long SOCKET_INTERVAL = 5000;       // 5 seconds
     const unsigned long WIFI_CHECK_INTERVAL = 30000;  // 30 seconds
     const unsigned long PHONE_CHECK_INTERVAL = 60000; // 60 seconds
