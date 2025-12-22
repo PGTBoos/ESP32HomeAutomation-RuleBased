@@ -232,14 +232,14 @@ void DisplayManager::showSwitchesPage(const bool switches[],
     display.drawStr(0, 17, "No phone");
   }
 
-  auto drawSwitch = [&](int x, bool state, bool isOnline) {
-    const int y = 35;
-    const int radius = 6;
+  // Modified layout for 8 switches: 2 rows of 4
+  auto drawSwitch = [&](int x, int y, bool state, bool isOnline) {
+    const int radius = 5; // Slightly smaller for 8 switches
 
     if (!isOnline) {
       display.drawCircle(x, y, radius);
-      display.drawLine(x - 4, y - 4, x + 4, y + 4);
-      display.drawLine(x + 4, y - 4, x - 4, y + 4);
+      display.drawLine(x - 3, y - 3, x + 3, y + 3);
+      display.drawLine(x + 3, y - 3, x - 3, y + 3);
     } else if (state) {
       display.drawDisc(x, y, radius);
     } else {
@@ -247,15 +247,24 @@ void DisplayManager::showSwitchesPage(const bool switches[],
     }
   };
 
-  const int diameter = 12;
-  const int spacing = 5; // Increased from 2 to 5
-  const int startX = 6;
+  const int diameter = 10;
+  const int spacing = 4;
+  const int startX = 8;
+  const int row1Y = 32;
+  const int row2Y = 46;
 
-  for (int i = 0; i < NUM_SOCKETS; i++) {
+  // Draw switches 1-4 on first row
+  for (int i = 0; i < 4 && i < NUM_SOCKETS; i++) {
     int x = startX + (i * (diameter + spacing));
-    // Add null pointer check before dereferencing
     bool isConnected = (sockets[i] != nullptr) ? sockets[i]->isConnected() : false;
-    drawSwitch(x, switches[i], isConnected);
+    drawSwitch(x, row1Y, switches[i], isConnected);
+  }
+
+  // Draw switches 5-8 on second row
+  for (int i = 4; i < 8 && i < NUM_SOCKETS; i++) {
+    int x = startX + ((i - 4) * (diameter + spacing));
+    bool isConnected = (sockets[i] != nullptr) ? sockets[i]->isConnected() : false;
+    drawSwitch(x, row2Y, switches[i], isConnected);
   }
 
   display.setFont(u8g2_font_profont10_tr);

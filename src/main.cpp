@@ -9,9 +9,9 @@ EnvironmentSensors sensors;
 HomeP1Device *p1Meter = nullptr;
 // SimpleRuleEngine ruleEngine;
 
-HomeSocketDevice *sockets[NUM_SOCKETS] = {nullptr, nullptr, nullptr, nullptr};
-unsigned long lastStateChangeTime[NUM_SOCKETS] = {0, 0, 0, 0};
-bool switchForceOff[NUM_SOCKETS] = {false, false, false, false};
+HomeSocketDevice *sockets[NUM_SOCKETS] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+unsigned long lastStateChangeTime[NUM_SOCKETS] = {0, 0, 0, 0, 0, 0, 0, 0};
+bool switchForceOff[NUM_SOCKETS] = {false, false, false, false, false, false, false, false};
 SmartRuleSystem ruleSystem;
 TimeSync timeSync;
 WebInterface webServer;
@@ -335,11 +335,21 @@ void setup() {
   for (int i = 0; i < NUM_SOCKETS; i++) {
     if (config.socket_ip[i] != "" && config.socket_ip[i] != "0" &&
         config.socket_ip[i] != "null") {
-      sockets[i] = new HomeSocketDevice(config.socket_ip[i].c_str());
+      sockets[i] = new HomeSocketDevice(config.socket_ip[i].c_str(), i + 1); // Pass socket number
       socketsInitialized++;
       Serial.printf("Socket %d initialized at: %s\n", i + 1,
                     config.socket_ip[i].c_str());
     }
+  }
+
+  // initialize P1 meter
+  bool p1OK = false;
+  if (config.p1_ip != "" && config.p1_ip != "0" && config.p1_ip != "null") {
+    p1Meter = new HomeP1Device(config.p1_ip.c_str());
+    p1OK = true;
+    Serial.println("P1 meter initialized at: " + config.p1_ip);
+  } else {
+    Serial.println("P1 meter IP not configured");
   }
 
   if (displayOK) {
@@ -349,22 +359,16 @@ void setup() {
     delay(200);
   }
 
-  // Initialize SmartRuleSystem and synchronize socket states
-  for (int i = 0; i < NUM_SOCKETS; i++) {
-    if (sockets[i]) {
-      // Use the public interface to set the physical state
-      ruleSystem.pollPhysicalStates(); // Update physical states
-      Serial.printf("Socket %d: Physical State = %s, Virtual State = %s\n",
-                    i + 1, sockets[i]->getCurrentState() ? "On" : "Off",
-                    ruleSystem.getSocketState(i) ? "On" : "Off");
-    }
-  }
-
   // Set up rules
   setupRules();
   if (displayOK) {
     display.showStartupProgress("Rules Loaded", true);
     delay(200);
+  }
+
+  for (int i = 0; i < NUM_SOCKETS; i++) {
+    // Stagger by 250ms - all 8 sockets checked within 2 seconds of boot
+    timing.lastSocketUpdates[i] = millis() - timing.SOCKET_INTERVAL + (i * 250);
   }
 
   // Initialize phone presence check (if configured)
@@ -409,6 +413,7 @@ void reconnectWiFi() {
 static int yesterday;
 static uint16_t operationOrder = 0;
 static unsigned long lastRuleCheck = 0;
+static int currentSocketIndex = 0;
 
 void loop() {
   unsigned long currentMillis = millis();
@@ -470,14 +475,17 @@ void loop() {
 
   case 10:
     if (WiFi.status() != WL_CONNECTED) {
-      reconnectWiFi();
-      yield();
-      delay(8000);
-      reconnectWiFi();
-      // operationOrder = 10; // Go back to start if no WiFi
-    } else {
-      operationOrder = 12;
+      static unsigned long lastWifiAttempt = 0;
+      static int wifiAttempts = 0;
+
+      if (millis() - lastWifiAttempt > 10000) { // Try every 10 seconds
+        Serial.printf("WiFi reconnect attempt %d\n", ++wifiAttempts);
+        WiFi.disconnect();
+        WiFi.begin(config.wifi_ssid.c_str(), config.wifi_password.c_str());
+        lastWifiAttempt = millis();
+      }
     }
+    operationOrder = 12;
     break;
 
   case 12: // Light sensor (I2C)
@@ -495,14 +503,13 @@ void loop() {
   case 20: // Display update (I2C)
 
     if (currentMillis - timing.lastDisplayUpdate >= timing.DISPLAY_INTERVAL) {
-      Serial.printf("Display case 20 - time since last update: %lu ms\n",
-                    currentMillis - timing.lastDisplayUpdate);
-      Serial.println("Updating display...");
+      // Serial.printf("Display case 20 - time since last update: %lu ms\n", currentMillis - timing.lastDisplayUpdate);
+      //              Serial.println("Updating display...");
       updateDisplay();
       timing.lastDisplayUpdate = currentMillis;
       yield();
       delay(17);
-      Serial.println("Display update complete");
+      //            Serial.println("Display update complete");
     }
     operationOrder = 30;
     break;
@@ -511,33 +518,55 @@ void loop() {
     if (p1Meter &&
         (currentMillis - timing.lastP1Update >= timing.P1_INTERVAL)) {
       p1Meter->update();
-      Serial.printf("****** P1 meter update - Import: %.2f W, Export: %.2f W\n",
-                    p1Meter->getCurrentImport(), p1Meter->getCurrentExport()); // it reporst zero here as well ??
+      Serial.printf("****** P1 meter update - Import: %.2f W, Export: %.2f W\n", p1Meter->getCurrentImport(), p1Meter->getCurrentExport()); // it reporst zero here as well ??
       timing.lastP1Update = currentMillis;
+      delay(20);
       yield();
-      delay(49);
+      delay(20);
     }
     operationOrder = 40;
     break;
 
-  case 40: // Socket updates (Network)
-    for (int i = 0; i < NUM_SOCKETS; i++) {
-      if (sockets[i] && (currentMillis - timing.lastSocketUpdates[i] >=
-                         timing.SOCKET_INTERVAL)) {
-        sockets[i]->readStateInfo();
-        timing.lastSocketUpdates[i] = currentMillis;
-        // Handle socket-specific logic
-        if (i == 0 && p1Meter) {
-          // updateSwitch1Logic();
-        } else if (i == 1) {
-          //  updateSwitch2Logic();
-        } else if (i == 2) {
-          // updateSwitch3Logic();
-        }
+    // case 40: // Socket updates (Network)
+    //   for (int i = 0; i < NUM_SOCKETS; i++) {
+    //     if (sockets[i] && (currentMillis - timing.lastSocketUpdates[i] >=
+    //                        timing.SOCKET_INTERVAL)) {
+    //       sockets[i]->readStateInfo();
+    //       timing.lastSocketUpdates[i] = currentMillis;
+    //       // Handle socket-specific logic
+    //       if (i == 0 && p1Meter) {
+    //         // updateSwitch1Logic();
+    //       } else if (i == 1) {
+    //         //  updateSwitch2Logic();
+    //       } else if (i == 2) {
+    //         // updateSwitch3Logic();
+    //       }
+    //       yield();
+    //       delay(50);
+    //     }
+    //   }
+    //   operationOrder = 70;
+    //   break;
+
+  case 40: // Optimized Socket updates (Truly Non-blocking)
+    if (sockets[currentSocketIndex]) {
+      unsigned long now = millis();
+      // Check if THIS specific socket is due for a refresh
+      if (now - timing.lastSocketUpdates[currentSocketIndex] >= timing.SOCKET_INTERVAL) {
+        // Perform the network request for ONE socket only
+        sockets[currentSocketIndex]->readStateInfo();
+        timing.lastSocketUpdates[currentSocketIndex] = now;
         yield();
-        delay(50);
       }
     }
+
+    // Increment index for the NEXT time the state machine hits case 40
+    currentSocketIndex++;
+    if (currentSocketIndex >= NUM_SOCKETS) {
+      currentSocketIndex = 0;
+    }
+
+    // ALWAYS move to the next state (70) so the rest of the loop runs
     operationOrder = 70;
     break;
 
@@ -552,20 +581,21 @@ void loop() {
     yield();
     break;
 
-  case 90: // Phone presence check
-    if (phoneCheck && (currentMillis - timing.lastPhoneCheck >=
-                       timing.PHONE_CHECK_INTERVAL)) {
-      if (phoneCheck->isDevicePresent()) {
-        Serial.println("Phone is detected");
-        // Add your logic for when phone is present
-      } else {
-        Serial.println("Phone is not detected");
-        // Add your logic for when phone is absent
+  case 90:
+    if (phoneCheck && (currentMillis - timing.lastPhoneCheck >= timing.PHONE_CHECK_INTERVAL)) {
+      static bool lastPhoneState = false;
+      bool currentPhoneState = phoneCheck->isDevicePresent();
+
+      // Only log on change
+      if (currentPhoneState != lastPhoneState) {
+        Serial.println(currentPhoneState ? "Phone arrived" : "Phone left");
+        lastPhoneState = currentPhoneState;
       }
+
       timing.lastPhoneCheck = currentMillis;
       operationOrder = 95;
       yield();
-      delay(50); // Give some time between network operations
+      delay(20);
     } else {
       operationOrder = 95;
     }
@@ -590,6 +620,33 @@ void loop() {
       powerHistory.resetDayAccumulator();
     }
 
+    operationOrder = 97;
+    break;
+  }
+
+  case 97: // System heartbeat
+  {
+    static unsigned long lastHeartbeat = 0;
+    if (millis() - lastHeartbeat >= 30000) {
+      // Count online sockets
+      int onlineCount = 0;
+      for (int i = 0; i < NUM_SOCKETS; i++) {
+        if (sockets[i] && sockets[i]->isConnected())
+          onlineCount++;
+      }
+
+      // Power info
+      float import = p1Meter ? p1Meter->getCurrentImport() : 0;
+      float export_ = p1Meter ? p1Meter->getCurrentExport() : 0;
+
+      Serial.printf("♥ Up:%lum | RAM:%luK | Sockets:%d/%d | Pwr:%+.0fW\n",
+                    millis() / 60000, // uptime in minutes
+                    ESP.getFreeHeap() / 1024,
+                    onlineCount, NUM_SOCKETS,
+                    export_ - import); // positive = solar, negative = grid
+
+      lastHeartbeat = millis();
+    }
     operationOrder = 100;
     break;
   }

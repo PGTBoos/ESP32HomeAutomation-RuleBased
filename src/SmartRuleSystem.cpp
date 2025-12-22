@@ -1,3 +1,5 @@
+#define DEBUG_RULES 0
+
 #include "SmartRuleSystem.h"
 #include "GlobalVars.h"
 #include <cstdint>
@@ -116,7 +118,9 @@ const char *SmartRuleSystem::addMinutesToTime(const char *baseTime, int minutesT
   minute = minute % 60;
   hour = hour % 24;
 
+#if DEBUG_RULES
   snprintf(timeBuffer, sizeof(timeBuffer), "%02d:%02d", hour, minute);
+#endif
   return timeBuffer;
 }
 
@@ -128,7 +132,9 @@ const char *SmartRuleSystem::addHoursToTime(const char *baseTime, int hoursToAdd
 
   hour = (hour + hoursToAdd) % 24;
 
+#if DEBUG_RULES
   snprintf(timeBuffer, sizeof(timeBuffer), "%02d:%02d", hour, minute);
+#endif
   return timeBuffer;
 }
 
@@ -150,14 +156,32 @@ void SmartRuleSystem::update() {
     // Get rule decision
     RuleDecision decision = rule.evaluate();
 
-    Serial.printf("Socket %d: Rule '%s' evaluated to %s\n",
-                  rule.socketNumber,
-                  rule.name,
-                  decision == RuleDecision::On ? "ON" : decision == RuleDecision::Off ? "OFF"
-                                                                                      : "SKIP");
+#if DEBUG_RULES
+    // allow logging of skipped rules too when debugging
+    if (decision == RuleDecision::Skip) {
+      Serial.printf("Socket %d: Rule '%s' evaluated to SKIP\n",
+                    rule.socketNumber,
+                    rule.name);
+    }
+#endif
 
     // Only store non-SKIP decisions (lets later rules override earlier ones)
     if (decision != RuleDecision::Skip) {
+#if DEBUG_RULES
+      // Debug mode: log every evaluation
+      Serial.printf("Socket %d: Rule '%s' evaluated to %s\n",
+                    rule.socketNumber,
+                    rule.name,
+                    decision == RuleDecision::On ? "ON" : "OFF");
+#else
+      // Normal mode: only log when state changes
+      if (sockets[socketIndex].virtualState != decision) {
+        Serial.printf("Socket %d: Rule '%s' -> %s\n",
+                      rule.socketNumber,
+                      rule.name,
+                      decision == RuleDecision::On ? "ON" : "OFF");
+      }
+#endif
       sockets[socketIndex].virtualState = decision;
 
       // Track the last active rule that turns something ON
@@ -171,6 +195,10 @@ void SmartRuleSystem::update() {
   // 3. Apply the decisions
   for (int i = 0; i < NUM_SOCKETS; i++) {
     if (!::sockets[i])
+      continue;
+
+    // The socket must be connected to the wall outlet if not returning here
+    if (!::sockets[i]->isConnected())
       continue;
 
     // Only apply if we have a non-SKIP decision
@@ -190,6 +218,7 @@ void SmartRuleSystem::update() {
           snprintf(lastActiveRuleTimeStr, sizeof(lastActiveRuleTimeStr), "%02d:%02d %s",
                    currentTime.hour, currentTime.minute, (targetState ? "On" : "Off"));
           Serial.printf("Rule applied at %s: %s\n", lastActiveRuleTimeStr, lastActiveRuleName);
+          addRuleToHistory(lastActiveRuleName, lastActiveRuleTimeStr);
         }
       }
     }
@@ -252,7 +281,7 @@ void SmartRuleSystem::evaluateRules() {
       sockets[socketIndex].virtualState = decision;
 
       // print if its a workday
-      Serial.printf("It is a workday %s\n", timeSync.isWorkday() ? "true" : "false");
+      // Serial.printf("It is a workday %s\n", timeSync.isWorkday() ? "true" : "false");
       Serial.printf("Socket %d: Virtual state updated to %s\n",
                     socketIndex + 1,
                     decision == RuleDecision::On ? "ON" : "OFF");
@@ -273,8 +302,9 @@ void SmartRuleSystem::applyVirtualState() {
 
     bool targetState = decisionToPhysical(socket.virtualState);
     if (targetState == socket.physicalState) {
-      Serial.printf("Socket %d: No state change needed (current = %s)\n",
-                    i + 1, socket.physicalState ? "ON" : "OFF");
+#if DEBUG_RULES
+      Serial.printf("Socket %d: No state change needed (current = %s)\n", i + 1, socket.physicalState ? "ON" : "OFF");
+#endif
       socket.virtualState = RuleDecision::Skip;
       continue;
     }
@@ -393,13 +423,14 @@ std::function<RuleDecision()> SmartRuleSystem::solarHeaterControl(float exportTh
     // Evaluate condition once and store result
     bool conditionMet = extraCondition();
 
-    // Debug output
+// Debug output
+#if DEBUG_RULES
     Serial.println("\n----- Heater Rule Evaluation -----");
     Serial.printf("Current state: %s\n", deviceIsOn ? "ON" : "OFF");
     Serial.printf("Extra condition met: %s\n", conditionMet ? "YES" : "NO");
-    Serial.printf("Export power: %.2f W (threshold: %.2f W)\n",
-                  p1Meter ? p1Meter->getCurrentExport() : -1, exportThreshold);
+    Serial.printf("Export power: %.2f W (threshold: %.2f W)\n", p1Meter ? p1Meter->getCurrentExport() : -1, exportThreshold);
     Serial.printf("Time since last change: %lu ms\n", currentTime - lastStateChangeTime);
+#endif
 
     // First handle the case when we're ON
     if (deviceIsOn) {
@@ -407,7 +438,7 @@ std::function<RuleDecision()> SmartRuleSystem::solarHeaterControl(float exportTh
       if (!conditionMet && (currentTime - lastStateChangeTime >= minOnTime)) {
         deviceIsOn = false;
         lastStateChangeTime = currentTime;
-        Serial.println("Solar Control: Turning OFF - condition not met");
+        Serial.println("Solar Heater Control: Turning OFF - condition not met");
         return RuleDecision::Off;
       }
 
@@ -416,7 +447,7 @@ std::function<RuleDecision()> SmartRuleSystem::solarHeaterControl(float exportTh
           (currentTime - lastStateChangeTime >= minOnTime)) {
         deviceIsOn = false;
         lastStateChangeTime = currentTime;
-        Serial.println("Solar Control: Turning OFF - import threshold exceeded");
+        Serial.println("Solar Heater Control: Turning OFF - import threshold exceeded");
         return RuleDecision::Off;
       }
 
@@ -432,7 +463,7 @@ std::function<RuleDecision()> SmartRuleSystem::solarHeaterControl(float exportTh
             (currentTime - lastStateChangeTime >= minOffTime)) {
           deviceIsOn = true;
           lastStateChangeTime = currentTime;
-          Serial.println("Solar Control: Turning ON - export threshold met");
+          Serial.println("Solar Heater Control: Turning ON - export threshold met");
           return RuleDecision::On;
         }
       }
@@ -503,13 +534,13 @@ std::function<RuleDecision()> SmartRuleSystem::period(const char *startTime, con
       isInTimeRange = currentMinutes >= startMinutes && currentMinutes <= endMinutes;
     }
 
-    Serial.printf("Period check: Current: %02d:%02d, Start: %s, End: %s, In Range: %s\n",
-                  currentTime.hour, currentTime.minute, startTime, endTime,
-                  isInTimeRange ? "true" : "false");
+#if DEBUG_RULES
+    Serial.printf("Period %s-%s: %s\n", startTime, endTime,
+                  isInTimeRange ? "IN RANGE" : "outside");
+#endif
 
-    // If we're outside the time range, return SKIP
+    // If we're outside the time range, return SKIP (silent)
     if (!isInTimeRange) {
-      Serial.println("Outside time period - returning SKIP");
       return RuleDecision::Skip;
     }
 
@@ -517,17 +548,20 @@ std::function<RuleDecision()> SmartRuleSystem::period(const char *startTime, con
     int turnOffStartMinutes = endMinutes - 2;
     bool isInTurnOffWindow = currentMinutes >= turnOffStartMinutes && currentMinutes <= endMinutes;
 
-    // If in turn-off window, return OFF
     if (isInTurnOffWindow) {
-      Serial.println("In turn-off window - returning OFF");
+      // This matters - period ending, always log
+      Serial.printf("Period %s-%s ending -> OFF\n", startTime, endTime);
       return RuleDecision::Off;
     }
 
     // We're in the active period, check condition
     bool conditionMet = condition();
-    Serial.printf("In active period, condition: %s\n", conditionMet ? "met" : "not met");
 
-    // Return ON if condition is met, otherwise SKIP
+#if DEBUG_RULES
+    Serial.printf("Period %s-%s active, condition: %s\n",
+                  startTime, endTime, conditionMet ? "MET" : "not met");
+#endif
+
     return conditionMet ? RuleDecision::On : RuleDecision::Skip;
   };
 }

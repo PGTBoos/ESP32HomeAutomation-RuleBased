@@ -62,8 +62,8 @@ void WebInterface::updateCache() {
   cached.light = sensors.getLightLevel();
 
   for (int i = 0; i < NUM_SOCKETS; i++) {
-    cached.socket_states[i] =
-        sockets[i] ? sockets[i]->getCurrentState() : false;
+    cached.socket_states[i] = sockets[i] ? sockets[i]->getCurrentState() : false;
+    cached.socket_online[i] = sockets[i] ? sockets[i]->isConnected() : false;
     cached.socket_durations[i] = millis() - lastStateChangeTime[i];
   }
 }
@@ -87,7 +87,8 @@ void WebInterface::begin() {
     server.sendHeader("Content-Type", "application/json");
     server.sendHeader("Access-Control-Allow-Origin", "*");
 
-    StaticJsonDocument<768> doc;
+    // StaticJsonDocument<1024> doc;
+    DynamicJsonDocument doc(2048);
 
     // Power data
     doc["import_power"] = cached.import_power;
@@ -118,12 +119,24 @@ void WebInterface::begin() {
       JsonObject sw = switches.createNestedObject();
       sw["state"] = cached.socket_states[i];
       sw["duration"] = cached.socket_durations[i] / 1000;
-      sw["online"] = (sockets[i] != nullptr) ? sockets[i]->isConnected() : false;
+      sw["online"] = cached.socket_online[i];
     }
 
     // Rule info
     doc["last_rule"] = lastActiveRuleName;
     doc["last_rule_time"] = lastActiveRuleTimeStr;
+
+    JsonArray ruleHist = doc.createNestedArray("rule_history");
+    for (int i = 0; i < 4; i++) {
+      int idx = (ruleHistoryIndex + i) % 4;
+      if (ruleHistory[idx].name[0] != '\0') {
+        if (strcmp(ruleHistory[idx].name, lastActiveRuleName) != 0) {
+          JsonObject hist = ruleHist.createNestedObject();
+          hist["name"] = ruleHistory[idx].name;
+          hist["time"] = ruleHistory[idx].time;
+        }
+      }
+    }
 
     // System info
     doc["ip"] = WiFi.localIP().toString();
@@ -216,7 +229,7 @@ void WebInterface::update() {
   if (server.client() && server.client().connected()) {
     lastWebUpdate = now;
     lastClientCheck = now;
-  } else if (now - lastClientCheck >= 1000) {
+  } else if (now - lastClientCheck >= 10000) {
     lastClientCheck = now;
     if (WiFi.status() == WL_CONNECTED) {
       Serial.printf("Web > Status: No active clients (uptime: %lus)\n",
