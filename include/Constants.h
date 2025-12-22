@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-constexpr uint8_t NUM_SOCKETS = 4;
+constexpr uint8_t NUM_SOCKETS = 8;
 
 // Day definitions
 static const uint8_t MONDAY = 0b00000001;

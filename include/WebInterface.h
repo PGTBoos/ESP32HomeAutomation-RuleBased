@@ -21,6 +21,7 @@ private:
         float humidity = 0;
         float light = 0;
         bool socket_states[NUM_SOCKETS] = {};
+        bool socket_online[NUM_SOCKETS] = {};
         unsigned long socket_durations[NUM_SOCKETS] = {0};
     };
 
