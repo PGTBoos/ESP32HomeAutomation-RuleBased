@@ -23,6 +23,15 @@ While others allow for manual changes (or delayed actions).
 How it looks from the website http(your ip addres):8080/index.html
 ![webview](https://github.com/PGTBoos/ESP32HomeAutomation-RuleBased/blob/main/Screenshot-webinterface.png)
 > *(note in above picture it had no more archived data so week and month dont show)*
+
+## MAJOR UPDATE 31-12-2025,  8 wall sockets support!
+Major rewrites, since esp32 has some limits on active sockets 
+The startup discovery is a bit slower now, though socket exhaustion is solved now.
+![Supports 8 sockets now!](https://github.com/PGTBoos/ESP32HomeAutomation-RuleBased/blob/main/8Sockets.png)
+
+
+
+
 # SmartRuleSystem Wiki
 
 A flexible rule-based automation system for ESP32 smart home control.  
