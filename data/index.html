@@ -215,13 +215,13 @@
         .switches-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 15px;
         }
 
         .switch-item {
             text-align: center;
-            padding: 10px 5px;
+            padding: 8px 2px;
             background: rgba(0, 0, 0, 0.2);
             border-radius: 12px;
             cursor: pointer;
@@ -242,14 +242,15 @@
         }
 
         .switch-circle {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            margin: 0 auto 10px;
+            margin: 0 auto 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 600;
+            font-size: 14px;
             transition: all 0.3s ease;
         }
 
@@ -271,8 +272,9 @@
         }
 
         .switch-label {
-            font-size: 12px;
+            font-size: 9px;
             color: #aaa;
+            white-space: nowrap;
         }
 
         .rule-info {
@@ -280,6 +282,12 @@
             background: rgba(0, 0, 0, 0.2);
             border-radius: 10px;
             font-size: 13px;
+        }
+
+        .rule-current {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .rule-name {
@@ -290,6 +298,25 @@
         .rule-time {
             color: #888;
             font-size: 12px;
+        }
+
+        .rule-history {
+            font-size: 11px;
+        }
+
+        .rule-history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            color: #666;
+        }
+
+        .rule-history-item .rule-hist-name {
+            color: #888;
+        }
+
+        .rule-history-item .rule-hist-time {
+            color: #555;
         }
 
         /* Info Card */
@@ -489,8 +516,11 @@
             </div>
             <div class="switches-grid" id="switches-grid"></div>
             <div class="rule-info">
-                <div class="rule-name" id="rule-name">--</div>
-                <div class="rule-time" id="rule-time">--</div>
+                <div class="rule-current">
+                    <div class="rule-name" id="rule-name">--</div>
+                    <div class="rule-time" id="rule-time">--</div>
+                </div>
+                <div class="rule-history" id="rule-history"></div>
             </div>
         </div>
 
@@ -633,7 +663,7 @@
 
     <script>
         let lastUpdateTime = null;
-        const NUM_SOCKETS = 4;
+        const NUM_SOCKETS = 8;  // Changed from 4 to 8
         let charts = {};
 
         // Chart.js default config for mirrored bar charts
@@ -801,7 +831,8 @@
 
         function updateNetClass(elementId, value) {
             const el = document.getElementById(elementId);
-            el.className = 'graph-stat-value net ' + (value >= 0 ? 'negative' : 'positive');
+            // Positive net (export > import) = green, Negative net (import > export) = red
+            el.className = 'graph-stat-value net ' + (value >= 0 ? 'positive' : 'negative');
         }
 
         function fetchData() {
@@ -834,14 +865,27 @@
                         const item = document.getElementById(`switch-${num}`);
                         const circle = document.getElementById(`switch-circle-${num}`);
 
-                        item.className = 'switch-item' + (sw.state ? ' on' : '') + (sw.online === false ? ' offline' : '');
-                        circle.className = 'switch-circle' + (sw.online === false ? ' offline' : (sw.state ? ' on' : ' off'));
-                        if (sw.online !== false) circle.textContent = num;
+                        if (item && circle) {
+                            item.className = 'switch-item' + (sw.state ? ' on' : '') + (sw.online === false ? ' offline' : '');
+                            circle.className = 'switch-circle' + (sw.online === false ? ' offline' : (sw.state ? ' on' : ' off'));
+                            if (sw.online !== false) circle.textContent = num;
+                        }
                     });
 
                     // Rule info
                     if (data.last_rule) document.getElementById('rule-name').textContent = data.last_rule;
                     if (data.last_rule_time) document.getElementById('rule-time').textContent = data.last_rule_time;
+
+                    // Rule history
+                    const historyDiv = document.getElementById('rule-history');
+                    if (data.rule_history && data.rule_history.length > 0) {
+                        historyDiv.innerHTML = data.rule_history.map(r =>
+                            `<div class="rule-history-item">
+                                <span class="rule-hist-name">${r.name}</span>
+                                <span class="rule-hist-time">${r.time}</span>
+                            </div>`
+                        ).join('');
+                    }
 
                     // System info
                     if (data.ip) document.getElementById('ip-address').textContent = data.ip;
@@ -872,8 +916,8 @@
 
                         document.getElementById('minute-avg-import').textContent = avgImport.toFixed(0) + ' W';
                         document.getElementById('minute-avg-export').textContent = avgExport.toFixed(0) + ' W';
-                        document.getElementById('minute-net').textContent = (net >= 0 ? '+' : '') + net.toFixed(0) + ' W';
-                        updateNetClass('minute-net', net);
+                        document.getElementById('minute-net').textContent = (net <= 0 ? '+' : '-') + Math.abs(net).toFixed(0) + ' W';
+                        updateNetClass('minute-net', -net);
                     }
                 });
 
@@ -891,8 +935,8 @@
 
                         document.getElementById('hour-total-import').textContent = totalImport.toFixed(0) + ' Wh';
                         document.getElementById('hour-total-export').textContent = totalExport.toFixed(0) + ' Wh';
-                        document.getElementById('hour-net').textContent = (net >= 0 ? '+' : '') + net.toFixed(0) + ' Wh';
-                        updateNetClass('hour-net', net);
+                        document.getElementById('hour-net').textContent = (net <= 0 ? '+' : '-') + Math.abs(net).toFixed(0) + ' Wh';
+                        updateNetClass('hour-net', -net);
                     }
                 });
 
@@ -915,8 +959,8 @@
 
                         document.getElementById('day-total-import').textContent = totalImport.toFixed(1) + ' kWh';
                         document.getElementById('day-total-export').textContent = totalExport.toFixed(1) + ' kWh';
-                        document.getElementById('day-net').textContent = (net >= 0 ? '+' : '') + net.toFixed(1) + ' kWh';
-                        updateNetClass('day-net', net);
+                        document.getElementById('day-net').textContent = (net <= 0 ? '+' : '-') + Math.abs(net).toFixed(1) + ' kWh';
+                        updateNetClass('day-net', -net);
                     }
                 });
 
@@ -934,8 +978,8 @@
 
                         document.getElementById('month-total-import').textContent = totalImport.toFixed(1) + ' kWh';
                         document.getElementById('month-total-export').textContent = totalExport.toFixed(1) + ' kWh';
-                        document.getElementById('month-net').textContent = (net >= 0 ? '+' : '') + net.toFixed(1) + ' kWh';
-                        updateNetClass('month-net', net);
+                        document.getElementById('month-net').textContent = (net <= 0 ? '+' : '-') + Math.abs(net).toFixed(1) + ' kWh';
+                        updateNetClass('month-net', -net);
                     }
                 });
         }

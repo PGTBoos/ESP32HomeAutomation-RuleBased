@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {
     "folders": [
 		{
@@ -5,4 +6,13 @@
 			"path": ".."
 		}
 	]
+=======
+{
+    "folders": [
+		{
+			"name": "HomeSystem",
+			"path": ".."
+		}
+	]
+>>>>>>> 4b002c6a95035d8e01148e2a819261d17acea3df
 }
