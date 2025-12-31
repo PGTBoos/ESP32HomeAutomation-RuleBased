@@ -126,6 +126,7 @@ void checkMaxOnTime() {
       sockets[i]->setState(false);
       switchForceOff[i] = true;
       lastStateChangeTime[i] = currentTime;
+      yield();
     }
   }
 }
@@ -205,7 +206,7 @@ void setupRules() {
              [&]() { // Replace the entire rule evaluation with a new lambda
                // First check time window - exit early if outside window
                if (!timeSync.isTimeBetween("07:00", "19:00")) {
-                 return RuleDecision::Skip; // Exit immediately outside time window
+                 return RuleDecision::Off; // Exit immediately outside time window
                }
 
                // Check rate limiting
@@ -259,7 +260,7 @@ void setup() {
 
   // Initialize I2C for sensors and display
   bool wireInitialized = false;
-  for (int i = 0; i < 3; i++) { // Retry I2C initialization up to 3 times
+  for (int i = 0; i < 4; i++) { // Retry I2C initialization up to 3 times
     Wire.end();                 // Ensure a clean start
     delay(50);
     if (Wire.begin()) {
@@ -304,6 +305,8 @@ void setup() {
     Serial.println("Environmental sensors not connected or initialization failed!");
   }
 
+  delay(200);
+
   // Connect to WiFi
   connectWiFi();
   bool wifiOK = (WiFi.status() == WL_CONNECTED);
@@ -323,24 +326,24 @@ void setup() {
     }
   }
 
-  // Initialize web server
-  webServer.begin();
-  if (displayOK) {
-    display.showStartupProgress("WEB OK", true);
-    delay(200);
-  }
+  delay(200);
 
+  Serial.println("Initializing sockets...");
   // Initialize sockets
   int socketsInitialized = 0;
   for (int i = 0; i < NUM_SOCKETS; i++) {
+    delay(200);
     if (config.socket_ip[i] != "" && config.socket_ip[i] != "0" &&
         config.socket_ip[i] != "null") {
+      Serial.printf(">>> ABOUT TO CREATE SOCKET %d <<<\n", i + 1);
       sockets[i] = new HomeSocketDevice(config.socket_ip[i].c_str(), i + 1); // Pass socket number
       socketsInitialized++;
       Serial.printf("Socket %d initialized at: %s\n", i + 1,
                     config.socket_ip[i].c_str());
     }
   }
+  Serial.println("Initialized sockets (done)");
+  delay(200);
 
   // initialize P1 meter
   bool p1OK = false;
@@ -352,6 +355,14 @@ void setup() {
     Serial.println("P1 meter IP not configured");
   }
 
+  Serial.println("Initializing web server...");
+  // Initialize web server
+  webServer.begin();
+  if (displayOK) {
+    display.showStartupProgress("WEB OK", true);
+    delay(200);
+  }
+
   if (displayOK) {
     char socketMsg[12];
     snprintf(socketMsg, sizeof(socketMsg), "Sockets %d", socketsInitialized);
@@ -359,6 +370,19 @@ void setup() {
     delay(200);
   }
 
+  Serial.println("Waiting for network to stabilize...");
+  delay(3000); // 3 seconds for WiFi/ARP to settle
+
+  // Now do an initial poll of all sockets with proper spacing
+  Serial.println("Discovering sockets...");
+  for (int i = 0; i < NUM_SOCKETS; i++) {
+    if (sockets[i]) {
+      Serial.printf("Polling socket %d...\n", i + 1);
+      sockets[i]->readStateInfo(); // Force immediate read
+      delay(3000);                 // 500ms between each socket to avoid overwhelming network
+      yield();
+    }
+  }
   // Set up rules
   setupRules();
   if (displayOK) {
@@ -414,13 +438,28 @@ static int yesterday;
 static uint16_t operationOrder = 0;
 static unsigned long lastRuleCheck = 0;
 static int currentSocketIndex = 0;
+static unsigned long lastWiFiFlush = 0;
 
 void loop() {
   unsigned long currentMillis = millis();
 
+  if (millis() - lastWiFiFlush > 3600000) { // Every hour
+    Serial.println("Flushing WiFi to clear socket pool...");
+    WiFi.disconnect();
+    delay(1000);
+    WiFi.begin(config.wifi_ssid.c_str(), config.wifi_password.c_str());
+    while (WiFi.status() != WL_CONNECTED && millis() - lastWiFiFlush < 3610000) {
+      delay(500);
+    }
+    lastWiFiFlush = millis();
+    Serial.println("WiFi reconnected, sockets flushed");
+  }
+
   // Use static counter to sequence for ALL operations
 
   File file;
+
+  delay(200);
 
   switch (operationOrder) {
   case 0:
@@ -633,6 +672,7 @@ void loop() {
       for (int i = 0; i < NUM_SOCKETS; i++) {
         if (sockets[i] && sockets[i]->isConnected())
           onlineCount++;
+        yield();
       }
 
       // Power info
@@ -731,4 +771,9 @@ void loop() {
     operationOrder = 5; // Reset to beginning
     break;
   }
+  webServer.update();
+  // add some time to let internal processes run.
+  delay(30);
+  yield();
+  vTaskDelay(30);
 }
