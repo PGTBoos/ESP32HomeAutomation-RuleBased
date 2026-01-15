@@ -532,8 +532,9 @@ void setup() {
   setupRules();
 }
 
-//note now with 8 wall sockets, timeouts may miss the rs.period(...) function to handle stuff
-//A better way to code a period i now have has example, (the period function may be removed soon)
+// Note now with 8 wall sockets, timeouts may miss the rs.period(...) function to handle stuff
+// A better way to code a period i now show in my below example, as demo code
+// (the period function may be removed soon)
 
 void setupRules() {
   auto &rs = ruleSystem;
