@@ -532,50 +532,42 @@ void setup() {
   setupRules();
 }
 
+//note now with 8 wall sockets, timeouts may miss the rs.period(...) function to handle stuff
+//A better way to code a period i now have has example, (the period function may be removed soon)
+
 void setupRules() {
   auto &rs = ruleSystem;
 
-  // Morning light on workdays, only when dark
-  rs.addRule(1, "Morning",
-      rs.period("07:00", "08:30",
-          rs.allOf({rs.isWorkday(), rs.lightBelow(10)})));
+  rs.addRule(1, "Good morning",
+             rs.onCondition(
+                 rs.allOf({rs.lightBelow(9),
+                           rs.isWorkday(),
+                           rs.socketIsOff(1), //so.. we only fire this when needed !
+                           rs.timeWindowBetween("07:10", "07:44")})));
 
-  // Evening light when home and dark
+  // Morning OFF rule (07:45-08:00, workdays only)
+  rs.addRule(1, "Leave for car",
+             rs.offCondition(
+                 rs.allOf({rs.isWorkday(),
+                           rs.socketIsOn(1), //again only when needed !.
+                           rs.timeWindowBetween("07:45", "08:00")})));
+
+  // Evening ON rule (weekdays)
   rs.addRule(1, "Evening",
-      rs.period("17:00", "23:00",
-          rs.allOf({rs.phonePresent(), rs.lightBelow(15)})));
+             rs.onCondition(
+                 rs.allOf({rs.lightBelow(7),
+                           rs.isWorkday(),
+                           rs.socketIsOff(1),
+                           rs.timeWindowBetween("17:15", eveningEndTime)})));
 
-  // TV ambient: on when home + after 18:00 + main light on (>20 lux)
-  rs.addRule(4, "TV ambient on",
-      rs.onCondition(rs.allOf({rs.phonePresent(), rs.after("18:00"), rs.lightAbove(20)})));
+  // Evening OFF rule (weekdays)
+  rs.addRule(1, "Good night",
+             rs.offCondition(
+                 rs.allOf({rs.isWorkday(),
+                           rs.socketIsOn(1),
+                           rs.timeWindowBetween(eveningEndTime,
+                                                rs.addMinutesToTime(eveningEndTime, 6))})));
 
-  // TV ambient: off when main light turned off (<10 lux)
-  rs.addRule(4, "TV ambient off",
-      rs.offCondition(rs.lightBelow(10)));
-
-  // Solar water heater
-  rs.addRule(2, "Solar Heater",
-      rs.solarHeaterControl(500, 100, 300000, 60000,
-          []() { return true; }));
-
-  // Force off late at night
-  rs.addRule(1, "Night Off",
-      rs.offAfter("23:30"));
-
-  // Sunset-triggered light
-  rs.addRule(3, "Sunset light",
-      rs.onCondition(rs.allOf({rs.beforeSunset(30), rs.lightBelow(15)})));
-
-  // Heating with auto-timeout (max 3 hours)
-  rs.addRule(4, "Heating",
-      rs.onCondition(rs.allOf({
-          rs.temperatureBelow(18.0),
-          rs.phonePresent(),
-          rs.sunDown()
-      })));
-  rs.addRule(4, "Heating timeout",
-      rs.offCondition(rs.hasBeenOnFor(4, 180)));
-}
 ```
 
 ---
